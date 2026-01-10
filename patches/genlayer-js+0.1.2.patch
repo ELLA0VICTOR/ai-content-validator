@@ -1,0 +1,14 @@
+diff --git a/node_modules/genlayer-js/dist/types/index.js b/node_modules/genlayer-js/dist/types/index.js
+index 1a06d65..04fff31 100644
+--- a/node_modules/genlayer-js/dist/types/index.js
++++ b/node_modules/genlayer-js/dist/types/index.js
+@@ -4,8 +4,7 @@ import {
+ import "../chunk-MLKGABMK.js";
+ 
+ // src/types/accounts.ts
+-import { Account } from "viem";
++// Account import removed - not used in runtime
+ export {
+-  Account,
+   TransactionStatus
+ };

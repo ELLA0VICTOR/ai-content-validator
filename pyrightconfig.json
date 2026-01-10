@@ -1,0 +1,13 @@
+{
+  "include": [
+    "contract"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__"
+  ],
+  "reportMissingImports": false,
+  "reportMissingModuleSource": false,
+  "stubPath": "contract",
+  "pythonVersion": "3.11"
+}

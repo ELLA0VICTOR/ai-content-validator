@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 12%;
+    --foreground: 210 20% 95%;
+    --card: 210 35% 16%;
+    --card-foreground: 210 20% 95%;
+    --popover: 210 35% 16%;
+    --popover-foreground: 210 20% 95%;
+    --primary: 350 85% 58%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 210 30% 20%;
+    --secondary-foreground: 210 20% 95%;
+    --muted: 210 30% 22%;
+    --muted-foreground: 210 20% 70%;
+    --accent: 47 90% 68%;
+    --accent-foreground: 210 40% 12%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 210 30% 25%;
+    --input: 210 30% 25%;
+    --ring: 350 85% 58%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    overflow-x: hidden;
+  }
+}
+
+@layer utilities {
+  .animate-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animate-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animate-delay-300 {
+    animation-delay: 300ms;
+  }
+  .animate-delay-400 {
+    animation-delay: 400ms;
+  }
+}
+
+.gradient-mesh {
+  background: 
+    radial-gradient(at 0% 0%, rgba(233, 69, 96, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(247, 220, 111, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(22, 33, 62, 0.3) 0px, transparent 50%);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #E94560 0%, #F7DC6F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
