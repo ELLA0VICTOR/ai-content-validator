@@ -1,5 +1,5 @@
 // GenLayer Configuration
-export const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x4cd2085d4109ec33b86fd26eb80e3feb79cebd48a97de5a8433b1576865efacd';
+export const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x80b14AacA443b66e11CC80535E9dFB7aD7799369';
 
 // Contract method names
 export const CONTRACT_METHODS = {

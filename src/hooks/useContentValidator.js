@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { createClient, chains } from 'genlayer-js';
+import { createClient } from 'genlayer-js';
+import { studionet } from 'genlayer-js/chains';
 import { CONTRACT_ADDRESS, CONTRACT_METHODS } from '@/config/genlayer';
 import { useWallet } from '@/contexts/WalletContext';
 
@@ -20,11 +21,15 @@ export const useContentValidator = () => {
       }
 
       try {
+        console.log('Initializing client with account:', account.address);
+        
+        // Create client with studionet chain for GenLayer Studio
         const newClient = createClient({
-          chain: chains.simulator,
-          endpoint: 'https://studio.genlayer.com/api',
-          account: account,
+          chain: studionet,
+          account: account.address,
         });
+        
+        console.log('Client created successfully');
         
         setClient(newClient);
         setInitialized(true);
@@ -32,6 +37,7 @@ export const useContentValidator = () => {
       } catch (err) {
         setError(`Failed to initialize client: ${err.message}`);
         setInitialized(false);
+        console.error('Client initialization error:', err);
       }
     };
 
@@ -56,6 +62,7 @@ export const useContentValidator = () => {
     setResult(null);
 
     try {
+      console.log('Submitting validation transaction...');
       const txHash = await client.writeContract({
         address: CONTRACT_ADDRESS,
         functionName: CONTRACT_METHODS.VALIDATE_CONTENT,
@@ -73,6 +80,7 @@ export const useContentValidator = () => {
 
       console.log('Transaction receipt:', receipt);
 
+      // Get the latest validation ID
       const latestValidationId = await client.readContract({
         address: CONTRACT_ADDRESS,
         functionName: CONTRACT_METHODS.GET_LATEST_VALIDATION_ID,
@@ -85,6 +93,7 @@ export const useContentValidator = () => {
 
       console.log('Latest validation ID:', latestValidationId);
 
+      // Fetch the validation result
       const validationResult = await client.readContract({
         address: CONTRACT_ADDRESS,
         functionName: CONTRACT_METHODS.GET_VALIDATION,
@@ -120,12 +129,14 @@ export const useContentValidator = () => {
     }
 
     try {
+      console.log('Fetching validation history for:', userAddress);
       const history = await client.readContract({
         address: CONTRACT_ADDRESS,
         functionName: CONTRACT_METHODS.GET_USER_VALIDATIONS,
         args: [userAddress],
       });
 
+      console.log('Validation history:', history);
       return history || [];
     } catch (err) {
       const errorMsg = `Failed to fetch history: ${err.message}`;
@@ -151,6 +162,7 @@ export const useContentValidator = () => {
         args: [],
       });
 
+      console.log('Validation count:', count);
       return Number(count) || 0;
     } catch (err) {
       console.error('Failed to fetch validation count:', err);

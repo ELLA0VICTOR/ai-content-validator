@@ -20,7 +20,7 @@ class ContentValidator(gl.Contract):
     validation_count: u64
     
     def __init__(self):
-        pass
+        self.validation_count = u64(0)
     
     @gl.public.write
     def validate_content(self, content: str, min_words: int):
@@ -44,7 +44,7 @@ PASSED: [YES if score >= 70, NO if score < 70]
 FEEDBACK: [one clear sentence explaining the score]"""
         
         def analyze_content():
-            ai_response = gl.exec_prompt(prompt)
+            ai_response = gl.nondet.exec_prompt(prompt)  # ← FIXED: Added .nondet
             
             score_line = ""
             passed_line = ""
@@ -74,7 +74,7 @@ FEEDBACK: [one clear sentence explaining the score]"""
             
             return (score, passed, feedback_line)
         
-        analysis = gl.eq_principle_strict_eq(analyze_content)
+        analysis = gl.eq_principle.strict_eq(analyze_content)  # ← FIXED: Added dot notation
         
         score_value = analysis[0]
         passed_value = analysis[1]

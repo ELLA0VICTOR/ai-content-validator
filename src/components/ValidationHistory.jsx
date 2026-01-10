@@ -21,6 +21,7 @@ export function ValidationHistory({ getHistory, account }) {
       const data = await getHistory(account.address);
       setHistory(data || []);
     } catch (err) {
+      console.error('Failed to load history:', err);
       setHistory([]);
     } finally {
       setLoading(false);

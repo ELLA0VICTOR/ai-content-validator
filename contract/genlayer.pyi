@@ -98,16 +98,38 @@ class _Public:
     view: _PublicView
     write: _PublicWrite
 
+# NEW: Nondet module for AI and web operations
+class _Nondet:
+    @staticmethod
+    def exec_prompt(prompt: str, *, images: Any = None, response_format: str = 'text') -> str: ...
+    
+    @staticmethod
+    def get_webpage(url: str, mode: str = 'text') -> str: ...
+
+# NEW: Equivalence principle module
+class _EqPrinciple:
+    @staticmethod
+    def strict_eq(func: Callable[[], T]) -> T: ...
+    
+    @staticmethod
+    def prompt_comparative(func: Callable[[], T], principle: str) -> T: ...
+    
+    @staticmethod
+    def prompt_non_comparative(func: Callable[[], str], *, task: str, criteria: str) -> str: ...
+
 class _GL:
     message: _Message
     block: _Block
     storage: _Storage
     public: _Public
+    nondet: _Nondet  # ← NEW: Added for v0.18+
+    eq_principle: _EqPrinciple  # ← NEW: Added for v0.18+
     
     class Contract:
         """Base class for GenLayer contracts"""
         ...
     
+    # Deprecated methods (kept for backwards compatibility)
     @staticmethod
     def exec_prompt(prompt: str) -> str: ...
     
