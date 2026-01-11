@@ -10,7 +10,8 @@ export function ValidationHistory({ getHistory, account }) {
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    loadHistory();
+    // Don't auto-load on mount - only load when user clicks refresh
+    // This prevents errors when contract has no data yet
   }, [account]);
 
   const loadHistory = async () => {

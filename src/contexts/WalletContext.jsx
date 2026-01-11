@@ -3,6 +3,19 @@ import { createAccount } from 'genlayer-js';
 
 const WalletContext = createContext(null);
 
+// GenLayer Studio network configuration
+// Try the Chain ID from your existing MetaMask config
+const GENLAYER_STUDIO_NETWORK = {
+  chainId: '0xf22f', // 62255 in decimal (your MetaMask config)
+  chainName: 'GenLayer Studio',
+  rpcUrls: ['https://studio.genlayer.com/api'],
+  nativeCurrency: {
+    name: 'GEN',
+    symbol: 'GEN',
+    decimals: 18
+  },
+};
+
 export function WalletProvider({ children }) {
   const [account, setAccount] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -25,6 +38,33 @@ export function WalletProvider({ children }) {
     }
   };
 
+  const switchToGenLayerNetwork = async () => {
+    try {
+      // Try to switch to GenLayer Studio network
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: GENLAYER_STUDIO_NETWORK.chainId }],
+      });
+      return true;
+    } catch (switchError) {
+      // Network doesn't exist, add it
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [GENLAYER_STUDIO_NETWORK],
+          });
+          return true;
+        } catch (addError) {
+          console.error('Failed to add GenLayer network:', addError);
+          return false;
+        }
+      }
+      console.error('Failed to switch network:', switchError);
+      return false;
+    }
+  };
+
   const connectMetaMask = async () => {
     try {
       if (!window.ethereum) {
@@ -32,6 +72,14 @@ export function WalletProvider({ children }) {
         return false;
       }
 
+      // First, switch to GenLayer network
+      const networkSwitched = await switchToGenLayerNetwork();
+      if (!networkSwitched) {
+        setError('Please switch to GenLayer Studio network in MetaMask');
+        return false;
+      }
+
+      // Request account access
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       });

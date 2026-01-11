@@ -71,24 +71,65 @@ export const useContentValidator = () => {
       });
 
       console.log('Transaction submitted:', txHash);
+      console.log('You can check status in GenLayer Studio or wait here...');
+      console.log('Transaction hash to check:', txHash);
 
-      const receipt = await client.waitForTransactionReceipt({
-        hash: txHash,
-        retries: 100,
-        interval: 3000,
-      });
+      // Wait for transaction to be ACCEPTED with explicit status
+      console.log('Waiting for transaction to be accepted (this may take 30-60 seconds)...');
+      console.log('The transaction involves AI processing which takes time...');
+      
+      let receipt;
+      try {
+        receipt = await client.waitForTransactionReceipt({
+          hash: txHash,
+          status: 'FINALIZED',  // ← Try FINALIZED instead of ACCEPTED
+          retries: 300,  // 15 minutes max (300 * 3 seconds)
+          interval: 3000,
+        });
+      } catch (waitError) {
+        console.error('Wait error:', waitError);
+        
+        // Try to get the transaction manually to see what happened
+        try {
+          const tx = await client.getTransaction({ hash: txHash });
+          console.log('Transaction details:', tx);
+          console.log('Transaction status:', tx.status);
+          console.log('Transaction statusName:', tx.statusName);
+        } catch (getTxError) {
+          console.error('Could not fetch transaction:', getTxError);
+        }
+        
+        throw new Error(`Transaction did not finalize within expected time. Hash: ${txHash}. Check GenLayer Studio for status.`);
+      }
 
+      console.log('Transaction accepted!');
       console.log('Transaction receipt:', receipt);
+      console.log('Receipt status:', receipt.status);
+      console.log('Receipt status name:', receipt.statusName);
+      console.log('Receipt result:', receipt.result);
+      console.log('Receipt result_name:', receipt.result_name);
+      console.log('Receipt data:', receipt.data);
+      console.log('Receipt data.calldata:', receipt.data?.calldata);
+      
+      // Check if the transaction actually succeeded
+      if (receipt.result !== 0 && receipt.result !== 6) {
+        console.error('Transaction failed with result:', receipt.result, receipt.result_name);
+        throw new Error(`Transaction failed: ${receipt.result_name || 'Unknown error'}`);
+      }
 
       // Get the latest validation ID
+      console.log('Fetching latest validation ID...');
       const latestValidationId = await client.readContract({
         address: CONTRACT_ADDRESS,
         functionName: CONTRACT_METHODS.GET_LATEST_VALIDATION_ID,
         args: [],
       });
       
-      if (!latestValidationId) {
-        throw new Error('No validation ID returned');
+      console.log('Latest validation ID raw:', latestValidationId);
+      console.log('Latest validation ID type:', typeof latestValidationId);
+      
+      if (!latestValidationId || latestValidationId === '') {
+        throw new Error('No validation ID returned - transaction may still be processing');
       }
 
       console.log('Latest validation ID:', latestValidationId);
@@ -130,18 +171,34 @@ export const useContentValidator = () => {
 
     try {
       console.log('Fetching validation history for:', userAddress);
+      console.log('Contract address:', CONTRACT_ADDRESS);
+      console.log('Function name:', CONTRACT_METHODS.GET_USER_VALIDATIONS);
+      console.log('Args:', [userAddress]);
+      console.log('Args[0] type:', typeof userAddress);
+      console.log('Args[0] value:', userAddress);
+      
       const history = await client.readContract({
         address: CONTRACT_ADDRESS,
         functionName: CONTRACT_METHODS.GET_USER_VALIDATIONS,
         args: [userAddress],
       });
 
-      console.log('Validation history:', history);
+      console.log('Validation history SUCCESS:', history);
       return history || [];
     } catch (err) {
       const errorMsg = `Failed to fetch history: ${err.message}`;
       setError(errorMsg);
       console.error('History fetch error:', err);
+      console.error('Full error object:', err);
+      
+      // Try to get more details from the error
+      if (err.cause) {
+        console.error('Error cause:', err.cause);
+      }
+      if (err.details) {
+        console.error('Error details:', err.details);
+      }
+      
       return [];
     }
   }, [client, initialized]);
