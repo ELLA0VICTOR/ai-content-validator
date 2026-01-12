@@ -128,9 +128,8 @@ The score must be 0-100, passed must be true if score >= 70, and feedback must e
             user_vals.append(validation_id)
             self.user_validations[sender_str] = user_vals
         else:
-            new_array = DynArray[str]()
-            new_array.append(validation_id)
-            self.user_validations[sender_str] = new_array
+            # Use regular Python list - GenLayer converts it to DynArray automatically
+            self.user_validations[sender_str] = [validation_id]
     
     @gl.public.view
     def get_validation(self, validation_id: str) -> ValidationResult:

@@ -117,11 +117,6 @@ export const useContentValidator = () => {
         throw new Error(`Transaction failed: ${receipt.result_name || 'Unknown error'}`);
       }
 
-      // ⭐ ADD DELAY HERE - Wait for state to propagate after FINALIZED
-      console.log('Waiting for state propagation (30 seconds)...');
-      await new Promise(resolve => setTimeout(resolve, 30000));
-      console.log('State should now be available for reading');
-
       // Get the latest validation ID
       console.log('Fetching latest validation ID...');
       const latestValidationId = await client.readContract({
@@ -144,6 +139,15 @@ export const useContentValidator = () => {
         address: CONTRACT_ADDRESS,
         functionName: CONTRACT_METHODS.GET_VALIDATION,
         args: [latestValidationId],
+      });
+
+      console.log('Raw validation result:', validationResult);
+      console.log('Result fields:', {
+        score: validationResult.score,
+        passed: validationResult.passed,
+        word_count: validationResult.word_count,
+        timestamp: validationResult.timestamp,
+        feedback: validationResult.feedback
       });
 
       setResult(validationResult);

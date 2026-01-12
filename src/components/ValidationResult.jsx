@@ -7,9 +7,15 @@ import { VALIDATION_CONFIG } from '@/config/genlayer';
 export function ValidationResult({ result }) {
   if (!result) return null;
 
-  const score = Number(result.score);
-  const passed = result.passed;
-  const wordCount = Number(result.word_count);
+  // GenLayer returns a Map object, not a plain object
+  // Use .get() to access Map values
+  const score = Number(result.get?.('score') ?? result.score) || 0;
+  const passed = Boolean(result.get?.('passed') ?? result.passed);
+  const wordCount = Number(result.get?.('word_count') ?? result.word_count) || 0;
+  const timestamp = Number(result.get?.('timestamp') ?? result.timestamp) || 0;
+  const feedback = result.get?.('feedback') ?? result.feedback ?? 'No feedback provided';
+  const validationId = result.get?.('validation_id') ?? result.validation_id ?? 'Unknown';
+  const contentHash = result.get?.('content_hash') ?? result.content_hash ?? '';
 
   const getScoreColor = () => {
     if (score >= 90) return 'text-green-400';
@@ -44,7 +50,7 @@ export function ValidationResult({ result }) {
           </Badge>
         </div>
         <CardDescription>
-          Validation ID: {result.validation_id}
+          Validation ID: {validationId}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -76,7 +82,7 @@ export function ValidationResult({ result }) {
           </h4>
           <div className="bg-secondary/50 rounded-lg p-4">
             <p className="text-sm leading-relaxed">
-              {result.feedback}
+              {feedback}
             </p>
           </div>
         </div>
@@ -92,7 +98,7 @@ export function ValidationResult({ result }) {
               Timestamp
             </p>
             <p className="text-sm font-mono text-muted-foreground">
-              Block #{result.timestamp.toString()}
+              Block #{timestamp}
             </p>
           </div>
         </div>
@@ -105,7 +111,7 @@ export function ValidationResult({ result }) {
             </summary>
             <div className="mt-3 p-4 bg-secondary/30 rounded-lg">
               <p className="text-xs font-mono text-muted-foreground break-all">
-                {result.content_hash}...
+                {contentHash}...
               </p>
             </div>
           </details>

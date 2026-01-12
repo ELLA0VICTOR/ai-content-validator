@@ -39,8 +39,8 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background gradient-mesh">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(233,69,96,0.05),transparent_70%)]" />
+    <div className="min-h-screen bg-background ">
+      
       
       <div className="relative">
         <header className="border-b border-border/50 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
@@ -51,7 +51,7 @@ function App() {
                   <Sparkles className="h-8 w-8 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gradient">
+                  <h1 className="text-3xl font-bold text-[#e94960] ">
                     AI Content Validator
                   </h1>
                   <p className="text-sm text-muted-foreground">
