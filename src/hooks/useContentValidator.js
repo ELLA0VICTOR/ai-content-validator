@@ -74,15 +74,15 @@ export const useContentValidator = () => {
       console.log('You can check status in GenLayer Studio or wait here...');
       console.log('Transaction hash to check:', txHash);
 
-      // Wait for transaction to be ACCEPTED with explicit status
-      console.log('Waiting for transaction to be accepted (this may take 30-60 seconds)...');
+      // Wait for transaction to be FINALIZED
+      console.log('Waiting for transaction to be finalized (this may take 30-60 seconds)...');
       console.log('The transaction involves AI processing which takes time...');
       
       let receipt;
       try {
         receipt = await client.waitForTransactionReceipt({
           hash: txHash,
-          status: 'FINALIZED',  // ← Try FINALIZED instead of ACCEPTED
+          status: 'FINALIZED',
           retries: 300,  // 15 minutes max (300 * 3 seconds)
           interval: 3000,
         });
@@ -102,7 +102,7 @@ export const useContentValidator = () => {
         throw new Error(`Transaction did not finalize within expected time. Hash: ${txHash}. Check GenLayer Studio for status.`);
       }
 
-      console.log('Transaction accepted!');
+      console.log('Transaction finalized!');
       console.log('Transaction receipt:', receipt);
       console.log('Receipt status:', receipt.status);
       console.log('Receipt status name:', receipt.statusName);
@@ -116,6 +116,11 @@ export const useContentValidator = () => {
         console.error('Transaction failed with result:', receipt.result, receipt.result_name);
         throw new Error(`Transaction failed: ${receipt.result_name || 'Unknown error'}`);
       }
+
+      // ⭐ ADD DELAY HERE - Wait for state to propagate after FINALIZED
+      console.log('Waiting for state propagation (30 seconds)...');
+      await new Promise(resolve => setTimeout(resolve, 30000));
+      console.log('State should now be available for reading');
 
       // Get the latest validation ID
       console.log('Fetching latest validation ID...');

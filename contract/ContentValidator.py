@@ -1,6 +1,7 @@
 # { "Depends": "py-genlayer:test" }
 from genlayer import *
 from dataclasses import dataclass
+import json
 
 @allow_storage
 @dataclass
@@ -20,7 +21,7 @@ class ContentValidator(gl.Contract):
     validation_count: u64
     
     def __init__(self):
-        self.validation_count = u64(0)
+        pass  # GenLayer auto-initializes all storage fields to their default values
     
     @gl.public.write
     def validate_content(self, content: str, min_words: int):
@@ -30,6 +31,7 @@ class ContentValidator(gl.Contract):
         if word_count < min_words:
             raise Exception(f"Content must have at least {min_words} words. Current: {word_count}")
         
+        # Use custom run_nondet pattern for structured JSON data
         prompt = f"""You are a professional content validator. Analyze this content and provide a score from 0-100 based on:
 - Grammar & Spelling (0-40 points): Check for errors, proper punctuation, and language quality
 - Readability & Clarity (0-30 points): Evaluate flow, structure, and ease of understanding
@@ -38,48 +40,64 @@ class ContentValidator(gl.Contract):
 Content to validate:
 {content}
 
-You MUST respond in this EXACT format with no additional text:
-SCORE: [number between 0-100]
-PASSED: [YES if score >= 70, NO if score < 70]
-FEEDBACK: [one clear sentence explaining the score]"""
+You MUST respond in this EXACT JSON format with NO additional text or markdown:
+{{"score": 85, "passed": true, "feedback": "Clear explanation of the score"}}
+
+The score must be 0-100, passed must be true if score >= 70, and feedback must explain the score."""
         
-        def analyze_content():
-            ai_response = gl.nondet.exec_prompt(prompt)  # ← FIXED: Added .nondet
-            
-            score_line = ""
-            passed_line = ""
-            feedback_line = ""
-            
-            for line in ai_response.split('\n'):
-                line = line.strip()
-                if line.startswith('SCORE:'):
-                    score_line = line.replace('SCORE:', '').strip()
-                elif line.startswith('PASSED:'):
-                    passed_line = line.replace('PASSED:', '').strip()
-                elif line.startswith('FEEDBACK:'):
-                    feedback_line = line.replace('FEEDBACK:', '').strip()
-            
-            try:
-                score = int(score_line)
-            except:
-                score = 50
-            
-            if score > 100:
-                score = 100
-            
-            passed = passed_line.upper() == 'YES' or score >= 70
-            
-            if not feedback_line:
-                feedback_line = "Content analyzed successfully."
-            
-            return (score, passed, feedback_line)
+        def leader_fn():
+            response = gl.nondet.exec_prompt(prompt)
+            # Clean any markdown formatting
+            cleaned = response.replace("```json", "").replace("```", "").strip()
+            # Parse and return as dict
+            return json.loads(cleaned)
         
-        analysis = gl.eq_principle.strict_eq(analyze_content)  # ← FIXED: Added dot notation
+        def validator_fn(leader_res: gl.vm.Result) -> bool:
+            # Check if leader got an error
+            if not isinstance(leader_res, gl.vm.Return):
+                return False
+            
+            leader_data = leader_res.calldata
+            
+            # Validate structure
+            if not isinstance(leader_data, dict):
+                return False
+            if "score" not in leader_data or "passed" not in leader_data or "feedback" not in leader_data:
+                return False
+            
+            # Validate score is reasonable
+            score = leader_data["score"]
+            if not isinstance(score, (int, float)) or score < 0 or score > 100:
+                return False
+            
+            # Validate passed field matches score
+            passed = leader_data["passed"]
+            expected_passed = score >= 70
+            if passed != expected_passed:
+                return False
+            
+            # Validate feedback exists
+            feedback = leader_data["feedback"]
+            if not isinstance(feedback, str) or len(feedback) < 10:
+                return False
+            
+            return True
         
-        score_value = analysis[0]
-        passed_value = analysis[1]
-        feedback_value = analysis[2]
+        # Get analysis result as dict
+        analysis = gl.vm.run_nondet(leader_fn, validator_fn)
         
+        # Extract values from dict
+        score_value = analysis.get("score", 50)
+        passed_value = analysis.get("passed", False)
+        feedback_value = analysis.get("feedback", "Content analyzed successfully.")
+        
+        # Ensure score is within bounds
+        if score_value > 100:
+            score_value = 100
+        if score_value < 0:
+            score_value = 0
+        
+        # Increment validation count
         self.validation_count = u64(int(self.validation_count) + 1)
         validation_id = f"val_{self.validation_count}"
         
@@ -89,6 +107,7 @@ FEEDBACK: [one clear sentence explaining the score]"""
         
         sender_str = str(gl.message.sender_address)
         
+        # Create validation result
         result = ValidationResult(
             validation_id=validation_id,
             content_hash=content_preview,
@@ -100,8 +119,10 @@ FEEDBACK: [one clear sentence explaining the score]"""
             word_count=u64(word_count)
         )
         
+        # Store in validations map
         self.validations[validation_id] = result
         
+        # Update user validations
         if sender_str in self.user_validations:
             user_vals = self.user_validations[sender_str]
             user_vals.append(validation_id)
