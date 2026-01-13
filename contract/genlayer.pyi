@@ -1,6 +1,6 @@
 """Type stubs for GenLayer SDK - Silences Pylance warnings"""
 
-from typing import TypeVar, Generic, Callable, Any
+from typing import TypeVar, Generic, Callable, Any, Union
 from dataclasses import dataclass
 
 # Type variables
@@ -62,9 +62,13 @@ class i256(int):
 # Address type
 class Address(str): ...
 
-# Collection types
-class TreeMap(Generic[K, V], dict[K, V]): ...
-class DynArray(Generic[T], list[T]): ...
+# Collection types - Accept both list and DynArray for assignments
+class TreeMap(Generic[K, V], dict[K, V]):
+    def __setitem__(self, key: K, value: Union[V, list, 'DynArray']) -> None: ...  # type: ignore
+
+class DynArray(Generic[T], list[T]):
+    """DynArray can be created from lists - GenLayer handles conversion"""
+    def __class_getitem__(cls, item: type) -> type: ...  # Allow DynArray[T] syntax
 
 # Decorators
 def allow_storage(cls: type[T]) -> type[T]: ...
@@ -98,7 +102,7 @@ class _Public:
     view: _PublicView
     write: _PublicWrite
 
-# NEW: Nondet module for AI and web operations
+# Nondet module for AI and web operations
 class _Nondet:
     @staticmethod
     def exec_prompt(prompt: str, *, images: Any = None, response_format: str = 'text') -> str: ...
@@ -106,7 +110,37 @@ class _Nondet:
     @staticmethod
     def get_webpage(url: str, mode: str = 'text') -> str: ...
 
-# NEW: Equivalence principle module
+# VM module for custom equivalence principles
+class _Return(Generic[T]):
+    calldata: T
+
+class _UserError:
+    message: str
+
+class _VMError:
+    message: str
+
+class _VM:
+    Return = _Return
+    UserError = _UserError
+    VMError = _VMError
+    
+    @staticmethod
+    def run_nondet(
+        leader_fn: Callable[[], T],
+        validator_fn: Callable[[Union[_Return[T], _UserError, _VMError]], bool],
+        *,
+        compare_user_errors: Callable[[_UserError, _UserError], bool] | None = None,
+        compare_vm_errors: Callable[[_VMError, _VMError], bool] | None = None
+    ) -> T: ...
+    
+    @staticmethod
+    def run_nondet_unsafe(
+        leader_fn: Callable[[], T],
+        validator_fn: Callable[[Union[_Return[T], _UserError, _VMError]], bool]
+    ) -> T: ...
+
+# Equivalence principle module
 class _EqPrinciple:
     @staticmethod
     def strict_eq(func: Callable[[], T]) -> T: ...
@@ -115,15 +149,16 @@ class _EqPrinciple:
     def prompt_comparative(func: Callable[[], T], principle: str) -> T: ...
     
     @staticmethod
-    def prompt_non_comparative(func: Callable[[], str], *, task: str, criteria: str) -> str: ...
+    def prompt_non_comparative(*, input: Any, task: str, criteria: str) -> str: ...
 
 class _GL:
     message: _Message
     block: _Block
     storage: _Storage
     public: _Public
-    nondet: _Nondet  # ← NEW: Added for v0.18+
-    eq_principle: _EqPrinciple  # ← NEW: Added for v0.18+
+    nondet: _Nondet
+    eq_principle: _EqPrinciple
+    vm: _VM  # NEW: Added VM module
     
     class Contract:
         """Base class for GenLayer contracts"""
@@ -140,3 +175,8 @@ class _GL:
     def eq_principle_strict_eq(func: Callable[[], T]) -> T: ...
 
 gl: _GL
+
+# Type hint overrides for common patterns
+def cast_to_dynarray(lst: list[T]) -> DynArray[T]:
+    """Helper for type checking - lists are automatically converted to DynArray"""
+    return lst  # type: ignore

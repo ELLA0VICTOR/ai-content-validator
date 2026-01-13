@@ -52,7 +52,7 @@ The score must be 0-100, passed must be true if score >= 70, and feedback must e
             # Parse and return as dict
             return json.loads(cleaned)
         
-        def validator_fn(leader_res: gl.vm.Result) -> bool:
+        def validator_fn(leader_res: gl.vm.Result) -> bool:  # type: ignore
             # Check if leader got an error
             if not isinstance(leader_res, gl.vm.Return):
                 return False
@@ -139,18 +139,23 @@ The score must be 0-100, passed must be true if score >= 70, and feedback must e
     
     @gl.public.view
     def get_user_validations(self, user_address: str) -> DynArray[ValidationResult]:
-        results = DynArray[ValidationResult]()
+        # FIXED: Don't instantiate DynArray - use plain list
+        # Normalize the address format
+        normalized_address = user_address.lower()
+        if not normalized_address.startswith('0x'):
+            normalized_address = '0x' + normalized_address
         
-        if user_address not in self.user_validations:
-            return results
+        if normalized_address not in self.user_validations:
+            return []  # type: ignore[return-value]
         
-        validation_ids = self.user_validations[user_address]
+        validation_ids = self.user_validations[normalized_address]
         
+        result_list = []  # type: ignore[var-annotated]
         for val_id in validation_ids:
             if val_id in self.validations:
-                results.append(self.validations[val_id])
+                result_list.append(self.validations[val_id])
         
-        return results
+        return result_list  # type: ignore[return-value]
     
     @gl.public.view
     def get_validation_count(self) -> int:

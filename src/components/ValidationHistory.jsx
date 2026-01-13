@@ -20,7 +20,25 @@ export function ValidationHistory({ getHistory, account }) {
     setLoading(true);
     try {
       const data = await getHistory(account.address);
-      setHistory(data || []);
+      
+      // Convert Map objects to plain objects for easier handling
+      const normalizedData = (data || []).map(item => {
+        // Handle both Map objects and plain objects
+        const getField = (field) => item.get?.(field) ?? item[field];
+        
+        return {
+          validation_id: getField('validation_id'),
+          content_hash: getField('content_hash'),
+          author: getField('author'),
+          score: Number(getField('score')) || 0,
+          passed: Boolean(getField('passed')),
+          feedback: getField('feedback') || 'No feedback',
+          timestamp: Number(getField('timestamp')) || 0,
+          word_count: Number(getField('word_count')) || 0,
+        };
+      });
+      
+      setHistory(normalizedData);
     } catch (err) {
       console.error('Failed to load history:', err);
       setHistory([]);
@@ -40,7 +58,7 @@ export function ValidationHistory({ getHistory, account }) {
     passed: history.filter(h => h.passed).length,
     failed: history.filter(h => !h.passed).length,
     avgScore: history.length > 0 
-      ? Math.round(history.reduce((sum, h) => sum + Number(h.score), 0) / history.length)
+      ? Math.round(history.reduce((sum, h) => sum + h.score, 0) / history.length)
       : 0,
   };
 
@@ -155,9 +173,9 @@ export function ValidationHistory({ getHistory, account }) {
                     </p>
                     <p className="text-sm">{item.feedback}</p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>{Number(item.word_count)} words</span>
+                      <span>{item.word_count} words</span>
                       <span>•</span>
-                      <span>Block #{item.timestamp.toString()}</span>
+                      <span>Block #{item.timestamp}</span>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
@@ -165,7 +183,7 @@ export function ValidationHistory({ getHistory, account }) {
                       {item.passed ? 'PASSED' : 'FAILED'}
                     </Badge>
                     <span className="text-2xl font-bold text-primary">
-                      {Number(item.score)}
+                      {item.score}
                     </span>
                   </div>
                 </div>

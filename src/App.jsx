@@ -52,7 +52,7 @@ function App() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-[#e94960] ">
-                    AI Content Validator
+                    Authen Protocol
                   </h1>
                   <p className="text-sm text-muted-foreground">
                     Powered by GenLayer Intelligent Contracts
