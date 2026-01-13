@@ -1,20 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useImperativeHandle } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { History, CheckCircle2, XCircle, TrendingUp, Loader2 } from 'lucide-react';
 
-export function ValidationHistory({ getHistory, account }) {
+export function ValidationHistory({ getHistory, account, refreshTriggerRef }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('all');
 
-  useEffect(() => {
-    // Don't auto-load on mount - only load when user clicks refresh
-    // This prevents errors when contract has no data yet
-  }, [account]);
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     if (!account?.address) return;
     
     setLoading(true);
@@ -45,7 +40,17 @@ export function ValidationHistory({ getHistory, account }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getHistory, account?.address]);
+
+  // Expose loadHistory to parent via ref
+  useImperativeHandle(refreshTriggerRef, () => loadHistory, [loadHistory]);
+
+  // Auto-load on mount and when account changes
+  useEffect(() => {
+    if (account?.address) {
+      loadHistory();
+    }
+  }, [account?.address, loadHistory]);
 
   const filteredHistory = history.filter(item => {
     if (filter === 'passed') return item.passed;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ContentSubmission } from '@/components/ContentSubmission';
 import { ValidationResult } from '@/components/ValidationResult';
 import { ValidationHistory } from '@/components/ValidationHistory';
@@ -22,6 +22,7 @@ function App() {
   } = useContentValidator();
 
   const [totalValidations, setTotalValidations] = useState(0);
+  const historyRefreshRef = useRef(null);
 
   useEffect(() => {
     if (initialized) {
@@ -36,6 +37,14 @@ function App() {
 
   const handleValidate = async (content, minWords) => {
     await validateContent(content, minWords);
+    
+    // Auto-refresh validation history after successful validation
+    if (historyRefreshRef.current) {
+      // Small delay to ensure blockchain state is updated
+      setTimeout(() => {
+        historyRefreshRef.current();
+      }, 1000);
+    }
   };
 
   return (
@@ -135,6 +144,7 @@ function App() {
               <ValidationHistory 
                 getHistory={getValidationHistory}
                 account={account}
+                refreshTriggerRef={historyRefreshRef}
               />
 
               <HowItWorks />
