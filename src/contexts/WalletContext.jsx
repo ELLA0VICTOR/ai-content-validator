@@ -4,9 +4,8 @@ import { createAccount } from 'genlayer-js';
 const WalletContext = createContext(null);
 
 // GenLayer Studio network configuration
-// Try the Chain ID from your existing MetaMask config
 const GENLAYER_STUDIO_NETWORK = {
-  chainId: '0xf22f', // 62255 in decimal (your MetaMask config)
+  chainId: '0xf22f', // 62255 in decimal
   chainName: 'GenLayer Studio',
   rpcUrls: ['https://studio.genlayer.com/api'],
   nativeCurrency: {
@@ -28,26 +27,28 @@ export function WalletProvider({ children }) {
 
   const connectAutoAccount = () => {
     try {
+      // Create full account object with private key
       const autoAccount = createAccount();
-      setAccount(autoAccount);
+      console.log('Auto account created:', autoAccount.address);
+      
+      setAccount(autoAccount); // Store the FULL account object
       setIsConnected(true);
       setWalletType('auto');
       setError(null);
     } catch (err) {
+      console.error('Failed to create auto account:', err);
       setError('Failed to create account');
     }
   };
 
   const switchToGenLayerNetwork = async () => {
     try {
-      // Try to switch to GenLayer Studio network
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: GENLAYER_STUDIO_NETWORK.chainId }],
       });
       return true;
     } catch (switchError) {
-      // Network doesn't exist, add it
       if (switchError.code === 4902) {
         try {
           await window.ethereum.request({
@@ -85,6 +86,8 @@ export function WalletProvider({ children }) {
       });
 
       if (accounts.length > 0) {
+        // For MetaMask, we only have the address
+        // The signing will be handled by MetaMask's provider
         const metaMaskAccount = {
           address: accounts[0],
           type: 'metamask'
@@ -97,6 +100,7 @@ export function WalletProvider({ children }) {
         return true;
       }
     } catch (err) {
+      console.error('MetaMask connection error:', err);
       setError(err.message || 'Failed to connect MetaMask');
       return false;
     }
@@ -113,6 +117,7 @@ export function WalletProvider({ children }) {
     setWalletType(null);
     setError(null);
     
+    // Reconnect auto account after disconnect
     setTimeout(() => {
       connectAutoAccount();
     }, 100);
