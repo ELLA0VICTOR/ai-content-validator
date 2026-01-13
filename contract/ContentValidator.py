@@ -23,6 +23,13 @@ class ContentValidator(gl.Contract):
     def __init__(self):
         pass  # GenLayer auto-initializes all storage fields to their default values
     
+    def _normalize_address(self, address: str) -> str:
+        """Normalize address to lowercase with 0x prefix"""
+        normalized = address.lower()
+        if not normalized.startswith('0x'):
+            normalized = '0x' + normalized
+        return normalized
+    
     @gl.public.write
     def validate_content(self, content: str, min_words: int):
         words = content.split()
@@ -52,7 +59,7 @@ The score must be 0-100, passed must be true if score >= 70, and feedback must e
             # Parse and return as dict
             return json.loads(cleaned)
         
-        def validator_fn(leader_res: gl.vm.Result) -> bool:  # type: ignore
+        def validator_fn(leader_res: gl.vm.Result) -> bool: # type: ignore
             # Check if leader got an error
             if not isinstance(leader_res, gl.vm.Return):
                 return False
@@ -105,7 +112,8 @@ The score must be 0-100, passed must be true if score >= 70, and feedback must e
         
         timestamp = self.validation_count
         
-        sender_str = str(gl.message.sender_address)
+        # FIXED: Normalize the sender address before storing
+        sender_str = self._normalize_address(str(gl.message.sender_address))
         
         # Create validation result
         result = ValidationResult(
@@ -122,7 +130,7 @@ The score must be 0-100, passed must be true if score >= 70, and feedback must e
         # Store in validations map
         self.validations[validation_id] = result
         
-        # Update user validations
+        # Update user validations - now using normalized address
         if sender_str in self.user_validations:
             user_vals = self.user_validations[sender_str]
             user_vals.append(validation_id)
@@ -139,23 +147,20 @@ The score must be 0-100, passed must be true if score >= 70, and feedback must e
     
     @gl.public.view
     def get_user_validations(self, user_address: str) -> DynArray[ValidationResult]:
-        # FIXED: Don't instantiate DynArray - use plain list
         # Normalize the address format
-        normalized_address = user_address.lower()
-        if not normalized_address.startswith('0x'):
-            normalized_address = '0x' + normalized_address
+        normalized_address = self._normalize_address(user_address)
         
         if normalized_address not in self.user_validations:
-            return []  # type: ignore[return-value]
+            return []  # type: ignore # Return empty list, not DynArray()
         
         validation_ids = self.user_validations[normalized_address]
         
-        result_list = []  # type: ignore[var-annotated]
+        result_list = []  # Use plain list, not DynArray()
         for val_id in validation_ids:
             if val_id in self.validations:
                 result_list.append(self.validations[val_id])
         
-        return result_list  # type: ignore[return-value]
+        return result_list  # type: ignore # Return list - GenLayer converts to DynArray
     
     @gl.public.view
     def get_validation_count(self) -> int:

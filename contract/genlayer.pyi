@@ -68,7 +68,7 @@ class TreeMap(Generic[K, V], dict[K, V]):
 
 class DynArray(Generic[T], list[T]):
     """DynArray can be created from lists - GenLayer handles conversion"""
-    def __class_getitem__(cls, item: type) -> type: ...  # Allow DynArray[T] syntax
+    def __class_getitem__(cls, item: type) -> type: ...  # pyright: ignore[reportIncompatibleMethodOverride] # Allow DynArray[T] syntax
 
 # Decorators
 def allow_storage(cls: type[T]) -> type[T]: ...
